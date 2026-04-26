@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PracticalVault — Exam Paper Manager</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-icon">⚗️</span>
+    <span class="logo-text">PracticalVault</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#" class="nav-item active" data-view="all"><i class="fa fa-file-code"></i> All Papers</a>
+    <a href="#" class="nav-item" data-view="index"><i class="fa fa-list-ol"></i> Index Page</a>
+    <a href="#" class="nav-item" data-view="outputs"><i class="fa fa-link"></i> Output Links</a>
+    <a href="#" class="nav-item" data-view="downloads"><i class="fa fa-download"></i> Downloads</a>
+  </nav>
+  <div class="sidebar-stats">
+    <div class="mini-stat"><span id="sTotal">0</span><label>Practicals</label></div>
+    <div class="mini-stat"><span id="sLinks">0</span><label>Links</label></div>
+    <div class="mini-stat"><span id="sLangs">0</span><label>Languages</label></div>
+  </div>
+  <div class="sidebar-bottom">
+    <button class="btn-add" id="openAddModal"><i class="fa fa-plus"></i> Add Practical</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger"><i class="fa fa-bars"></i></button>
+    <div class="topbar-title" id="topbarTitle">All Papers</div>
+    <div class="topbar-right">
+      <div class="search-wrap">
+        <i class="fa fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="Search…"/>
+      </div>
+      <select id="langFilter">
+        <option value="">All Languages</option>
+        <option>Python</option><option>C</option><option>C++</option>
+        <option>Java</option><option>JavaScript</option><option>HTML/CSS</option>
+        <option>SQL</option><option>Other</option>
+      </select>
+      <button class="btn-print-all" id="printAllBtn" title="Print Index as PDF">
+        <i class="fa fa-print"></i> Print All
+      </button>
+    </div>
+  </header>
+
+  <!-- STATS BAR -->
+  <div class="stats-row">
+    <div class="stat-card" style="--c:#4ade80">
+      <span class="stat-icon">📄</span>
+      <div><div class="stat-num" id="statTotal">0</div><div class="stat-label">Total</div></div>
+    </div>
+    <div class="stat-card" style="--c:#60a5fa">
+      <span class="stat-icon">🔗</span>
+      <div><div class="stat-num" id="statLinks">0</div><div class="stat-label">Links</div></div>
+    </div>
+    <div class="stat-card" style="--c:#f472b6">
+      <span class="stat-icon">💾</span>
+      <div><div class="stat-num" id="statDL">0</div><div class="stat-label">Downloads</div></div>
+    </div>
+    <div class="stat-card" style="--c:#fb923c">
+      <span class="stat-icon">💻</span>
+      <div><div class="stat-num" id="statLangs">0</div><div class="stat-label">Languages</div></div>
+    </div>
+  </div>
+
+  <!-- ── ALL PAPERS VIEW ── -->
+  <section id="viewAll">
+    <div class="cards-grid" id="cardsGrid"></div>
+    <div class="empty-state" id="emptyState" style="display:none">
+      <div>🧪</div><p>No practicals yet. Click <strong>Add Practical</strong> to start!</p>
+    </div>
+  </section>
+
+  <!-- ── INDEX PAGE VIEW ── -->
+  <section id="viewIndex" style="display:none">
+    <div class="index-header">
+      <div>
+        <h2 class="index-title">📋 Practical Index</h2>
+        <p class="index-sub">All practicals listed serial-wise with output links</p>
+      </div>
+      <div class="index-actions">
+        <button class="ibtn ibtn-pdf" onclick="exportIndexPDF()"><i class="fa fa-file-pdf"></i> Export PDF</button>
+        <button class="ibtn ibtn-print" onclick="printIndex()"><i class="fa fa-print"></i> Print</button>
+      </div>
+    </div>
+    <div class="index-table-wrap">
+      <table class="index-table" id="indexTable">
+        <thead>
+          <tr>
+            <th>Sr.</th>
+            <th>Title</th>
+            <th>Subject</th>
+            <th>Language</th>
+            <th>Output Links</th>
+            <th>Code</th>
+            <th>Download</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="indexBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── OUTPUTS VIEW ── -->
+  <section id="viewOutputs" style="display:none">
+    <div class="cards-grid" id="outputsGrid"></div>
+    <div class="empty-state" id="emptyOutputs" style="display:none">
+      <div>🔗</div><p>No practicals with output links yet.</p>
+    </div>
+  </section>
+
+  <!-- ── DOWNLOADS VIEW ── -->
+  <section id="viewDownloads" style="display:none">
+    <div class="dl-list" id="dlList"></div>
+    <div class="empty-state" id="emptyDL" style="display:none">
+      <div>💾</div><p>No practicals with download links yet.</p>
+    </div>
+  </section>
+</main>
+
+<!-- ══════════ ADD / EDIT MODAL ══════════ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Add Practical</h2>
+      <button class="modal-close" id="closeModal"><i class="fa fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Practical No.</label>
+          <input type="number" id="fNo" placeholder="e.g. 1" min="1"/>
+        </div>
+        <div class="form-group">
+          <label>Language</label>
+          <select id="fLang">
+            <option>Python</option><option>C</option><option>C++</option>
+            <option>Java</option><option>JavaScript</option><option>HTML/CSS</option>
+            <option>SQL</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Title <span class="req">*</span></label>
+        <input type="text" id="fTitle" placeholder="e.g. Bubble Sort Implementation"/>
+      </div>
+      <div class="form-group">
+        <label>Subject</label>
+        <input type="text" id="fSubject" placeholder="e.g. Data Structures"/>
+      </div>
+      <div class="form-group">
+        <label>Aim / Description</label>
+        <textarea id="fAim" rows="3" placeholder="Write the aim of this practical…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Output / Demo Links <small>(one per line)</small></label>
+        <textarea id="fLinks" rows="3" placeholder="https://replit.com/...&#10;https://codepen.io/..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Direct Download Link <small>(Google Drive / PDF)</small></label>
+        <input type="url" id="fDownload" placeholder="https://drive.google.com/..."/>
+      </div>
+      <div class="form-group">
+        <label>Code Snippet</label>
+        <textarea id="fCode" rows="10" class="code-area" placeholder="Paste your full code here…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="cancelModal">Cancel</button>
+      <button class="btn-save" id="saveBtn"><i class="fa fa-floppy-disk"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ VIEW MODAL ══════════ -->
+<div class="modal-overlay" id="viewOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 id="viewTitle">—</h2>
+      <button class="modal-close" id="closeView"><i class="fa fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" id="viewBody"></div>
+    <div class="modal-footer" id="viewFooter"></div>
+  </div>
+</div>
+
+<!-- ══════════ PRINT FRAME (hidden) ══════════ -->
+<iframe id="printFrame" style="display:none"></iframe>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
